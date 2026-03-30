@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Создать блюдо</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #111;
+      --muted: #555;
+      --border: #e6e6e6;
+      --accent: #0b5fff;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 18px;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topbar { display:flex; align-items:flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .title { font-size: 22px; font-weight: 700; line-height: 1.2; }
+    .muted { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.35; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; column-gap: 14px; row-gap: 14px; }
+    .field { display:flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field label { display:block; font-size: 12px; color:#444; margin: 0; }
+    .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--border); background: #fff; }
+    .flags { display:flex; gap: 12px; flex-wrap: wrap; padding-top: 2px; }
+    .flag { display:inline-flex; align-items:center; gap: 8px; }
+    .flag input { width: auto; }
+    .hint { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.35; }
+    .photos { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+    .thumb { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); background: #fafafa; }
+    .ingredients { margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 12px; }
+    .ingredient-row { display:grid; grid-template-columns: 1fr 140px 110px; gap: 10px; align-items: end; margin-bottom: 12px; }
+    .ingredient-row button { width: 100%; }
+    .ingredient-row .field input, .ingredient-row .field select { margin: 0; }
+    .actions { display:flex; gap: 10px; align-items:center; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--border); }
+    button { padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .msg.ok { color: #1a7f37; }
+    .msg.err { color: #b42318; white-space: pre-wrap; }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .ingredient-row { grid-template-columns: 1fr 140px; }
+      .ingredient-row button { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="title">Создать блюдо</div>
+      <div class="muted">КБЖУ будет рассчитано автоматически по составу (можно затем скорректировать на детальной странице блюда).</div>
+    </div>
+    <div><a href="/">← Назад к спискам</a></div>
+  </div>
+
+  <div class="card">
+    <form id="dish-new-form">
+      <div class="grid">
+        <div class="field">
+          <label for="name">Название</label>
+          <input id="name" minlength="2" required placeholder="Можно с макросом: !суп, !салат, !десерт..." />
+          <div class="hint">Если категория не выбрана, будет взята из первого макроса в названии.</div>
+        </div>
+
+        <div class="field">
+          <label for="category">Категория (опц., приоритет над макросом)</label>
+          <select id="category">
+            <option value="">Не выбрано</option>
+            {% for c in dish_categories %}
+              <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="portion_size">Размер порции (г)</label>
+          <input id="portion_size" type="number" step="0.01" min="0.01" required />
+        </div>
+
+        <div class="field">
+          <label>Флаги блюда</label>
+          <div class="flags">
+            <label class="flag"><input type="checkbox" id="is_vegan" /> Веган</label>
+            <label class="flag"><input type="checkbox" id="is_gluten_free" /> Без глютена</label>
+            <label class="flag"><input type="checkbox" id="is_sugar_free" /> Без сахара</label>
+          </div>
+          <div class="hint">Флаги доступны только если все продукты в составе поддерживают их.</div>
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label for="photos">Фотографии (URL через запятую, до 5)</label>
+          <input id="photos" />
+          <div class="photos" id="photos-preview"></div>
+        </div>
+
+        <div class="ingredients" style="grid-column: 1 / -1;">
+          <div class="field">
+            <label>Состав (продукты и граммы на порцию)</label>
+          </div>
+          <div id="ingredients-container"></div>
+          <button type="button" id="add-ingredient">+ Добавить продукт</button>
+        </div>
+
+        <div class="field">
+          <label for="calories">Калорийность (ккал/порция)</label>
+          <input id="calories" type="number" step="0.01" min="0" placeholder="Авто по составу" />
+        </div>
+        <div class="field">
+          <label for="proteins">Белки (г/порция)</label>
+          <input id="proteins" type="number" step="0.01" min="0" placeholder="Авто по составу" />
+        </div>
+        <div class="field">
+          <label for="fats">Жиры (г/порция)</label>
+          <input id="fats" type="number" step="0.01" min="0" placeholder="Авто по составу" />
+        </div>
+        <div class="field">
+          <label for="carbs">Углеводы (г/порция)</label>
+          <input id="carbs" type="number" step="0.01" min="0" placeholder="Авто по составу" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="calc-draft">Рассчитать черновик КБЖУ</button>
+        <button type="button" id="preview-photos">Обновить превью фото</button>
+        <button type="submit" class="primary">Создать блюдо</button>
+      </div>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+
+  <script src="/static/dish_new.js"></script>
+</body>
+</html>
+

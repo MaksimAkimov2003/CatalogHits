@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Продукт — {{ product.name }}</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #111;
+      --muted: #555;
+      --border: #e6e6e6;
+      --accent: #0b5fff;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 18px;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 980px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    a { color: #0b5fff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .topbar { display:flex; align-items:flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .title { font-size: 22px; font-weight: 700; line-height: 1.2; }
+    .muted { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.35; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; column-gap: 14px; row-gap: 14px; }
+    .field { display:flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field label { display:block; font-size: 12px; color:#444; margin: 0; }
+    .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--border); background: #fff; }
+    .field textarea { min-height: 100px; resize: vertical; }
+    .flags { display:flex; gap: 12px; flex-wrap: wrap; padding-top: 2px; }
+    .flag { display:inline-flex; align-items:center; gap: 8px; }
+    .flag input { width: auto; }
+    .photos { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+    .thumb { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); background: #fafafa; }
+    .actions { display:flex; gap: 10px; align-items:center; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--border); }
+    button { padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .msg { margin-top: 10px; font-size: 13px; }
+    .msg.ok { color: #1a7f37; }
+    .msg.err { color: #b42318; white-space: pre-wrap; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="title">Продукт: {{ product.name }}</div>
+      <div class="muted">
+        ID: {{ product.id }} · Создан: <span id="created-at">{{ product.created_at }}</span>
+        · Обновлён: <span id="updated-at">{{ product.updated_at or "—" }}</span>
+      </div>
+    </div>
+    <div><a href="/">← Назад</a></div>
+  </div>
+
+  <div class="card">
+    <form id="product-form" data-product-id="{{ product.id }}">
+      <div class="grid">
+        <div class="field">
+          <label for="name">Название</label>
+          <input id="name" value="{{ product.name }}" minlength="2" required />
+        </div>
+
+        <div class="field">
+          <label for="category">Категория</label>
+          <select id="category" required>
+            {% for c in product_categories %}
+              <option value="{{ c }}" {% if product.category == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="cooking">Необходимость готовки</label>
+          <select id="cooking" required>
+            {% for c in cooking_requirements %}
+              <option value="{{ c }}" {% if product.cooking_requirement == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Флаги</label>
+          <div class="flags">
+            <label class="flag"><input type="checkbox" id="is_vegan" {% if product.is_vegan %}checked{% endif %}/> Веган</label>
+            <label class="flag"><input type="checkbox" id="is_gluten_free" {% if product.is_gluten_free %}checked{% endif %}/> Без глютена</label>
+            <label class="flag"><input type="checkbox" id="is_sugar_free" {% if product.is_sugar_free %}checked{% endif %}/> Без сахара</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="calories">Калорийность (ккал/100г)</label>
+          <input id="calories" type="number" step="0.01" min="0" value="{{ product.calories }}" required />
+        </div>
+        <div class="field">
+          <label for="proteins">Белки (г/100г)</label>
+          <input id="proteins" type="number" step="0.01" min="0" value="{{ product.proteins }}" required />
+        </div>
+        <div class="field">
+          <label for="fats">Жиры (г/100г)</label>
+          <input id="fats" type="number" step="0.01" min="0" value="{{ product.fats }}" required />
+        </div>
+        <div class="field">
+          <label for="carbs">Углеводы (г/100г)</label>
+          <input id="carbs" type="number" step="0.01" min="0" value="{{ product.carbs }}" required />
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label for="photos">Фотографии (URL через запятую, до 5)</label>
+          <input id="photos" value="{{ product.photos | join(', ') }}" />
+          <div class="photos" id="photos-preview">
+            {% for url in product.photos %}
+              <img class="thumb" src="{{ url }}" alt="Фото" loading="lazy" />
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label for="composition">Состав (текст)</label>
+          <textarea id="composition">{{ product.composition or "" }}</textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="preview-photos">Обновить превью фото</button>
+        <button type="submit" class="primary">Сохранить изменения</button>
+      </div>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+
+  <script src="/static/product.js"></script>
+</body>
+</html>
+

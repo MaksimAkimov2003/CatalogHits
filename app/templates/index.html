@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Книга рецептов</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    textarea, input, select { width: 100%; margin: 4px 0 10px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    .list-item { border-bottom: 1px solid #eee; padding: 12px 0; }
+    button { margin-right: 6px; }
+    .tabs button { padding: 8px 12px; }
+    .hidden { display: none; }
+    .row { display: flex; gap: 10px; align-items: flex-start; }
+    .thumb {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      background: #fafafa;
+      flex: 0 0 64px;
+    }
+    .meta { flex: 1; min-width: 0; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      background: #f7f7f7;
+    }
+    .badge.vegan { border-color: #2f855a; background: #e6fffa; }
+    .badge.gluten { border-color: #b7791f; background: #fffaf0; }
+    .badge.sugar { border-color: #6b46c1; background: #faf5ff; }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: end;
+      margin: 6px 0 10px;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .filters .full { grid-column: 1 / -1; }
+    .field label { display: block; font-size: 12px; color: #444; margin-bottom: 4px; }
+    .field input, .field select { margin: 0; }
+    .flags { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 2px; }
+    .flag { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+    .flag input { width: auto; margin: 0; }
+    .toolbar { display:flex; gap:10px; align-items:center; justify-content: space-between; flex-wrap: wrap; margin-top: 8px; }
+    .toolbar .left { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .toolbar button { margin: 0; }
+    .hint { font-size: 12px; color: #555; margin-top: 6px; }
+    .ingredient-row { display:grid; grid-template-columns: 1fr 140px 110px; gap: 10px; align-items: end; margin-top: 8px; }
+    .ingredient-row button { width: 100%; }
+    @media (max-width: 900px) {
+      .ingredient-row { grid-template-columns: 1fr 140px; }
+      .ingredient-row button { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Книга рецептов</h1>
+  <div class="tabs">
+    <button id="tab-products">Продукты</button>
+    <button id="tab-dishes">Блюда</button>
+  </div>
+
+  <section id="products-section" class="grid">
+    <div class="card">
+      <h3>Список продуктов</h3>
+      <div class="filters">
+        <div class="field full">
+          <label for="p-search">Поиск</label>
+          <input id="p-search" placeholder="Поиск по названию (подстрока)" />
+        </div>
+        <div class="field">
+          <label for="p-filter-category">Категория</label>
+          <select id="p-filter-category"></select>
+        </div>
+        <div class="field">
+          <label for="p-filter-cooking">Готовка</label>
+          <select id="p-filter-cooking"></select>
+        </div>
+        <div class="full">
+          <div class="flags">
+            <label class="flag"><input type="checkbox" id="p-filter-vegan"> Веган</label>
+            <label class="flag"><input type="checkbox" id="p-filter-gluten"> Без глютена</label>
+            <label class="flag"><input type="checkbox" id="p-filter-sugar"> Без сахара</label>
+          </div>
+        </div>
+        <div class="toolbar full">
+          <div class="left">
+            <div class="field" style="min-width: 240px">
+              <label for="p-sort">Сортировка</label>
+              <select id="p-sort">
+                <option value="name">Название</option>
+                <option value="calories">Калорийность</option>
+                <option value="proteins">Белки</option>
+                <option value="fats">Жиры</option>
+                <option value="carbs">Углеводы</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+            <a href="/products/new" style="display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; background:#fff; text-decoration:none;">+ Создать продукт</a>
+            <button id="reload-products">Показать</button>
+          </div>
+        </div>
+      </div>
+      <div id="products-list"></div>
+    </div>
+  </section>
+
+  <section id="dishes-section" class="grid hidden">
+    <div class="card">
+      <h3>Список блюд</h3>
+      <div class="filters">
+        <div class="field full">
+          <label for="d-search">Поиск</label>
+          <input id="d-search" placeholder="Поиск по названию (подстрока)" />
+        </div>
+        <div class="field">
+          <label for="d-filter-category">Категория</label>
+          <select id="d-filter-category"></select>
+        </div>
+        <div class="full">
+          <div class="flags">
+            <label class="flag"><input type="checkbox" id="d-filter-vegan"> Веган</label>
+            <label class="flag"><input type="checkbox" id="d-filter-gluten"> Без глютена</label>
+            <label class="flag"><input type="checkbox" id="d-filter-sugar"> Без сахара</label>
+          </div>
+        </div>
+        <div class="toolbar full">
+          <div class="left"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+            <a href="/dishes/new" style="display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:10px; background:#fff; text-decoration:none;">+ Создать блюдо</a>
+            <button id="reload-dishes">Показать</button>
+          </div>
+        </div>
+      </div>
+      <div id="dishes-list"></div>
+    </div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

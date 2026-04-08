@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# SQLite (локальная и тестовая)
+recipe_book.db

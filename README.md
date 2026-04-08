@@ -31,6 +31,20 @@ uvicorn app.main:app --reload
 pytest -q
 ```
 
+### API (интеграционные) тесты бэкенда
+
+Файлы: `tests/conftest.py`, `tests/test_api_products.py`, `tests/test_api_dishes.py`, `tests/test_api_integration.py`.
+
+HTTP идёт через тот же `FastAPI`-приложение (`TestClient`), а доступ к данным — через **тот же** `app.database.engine` и **`get_db` без подмены зависимостей**. Для тестов задаётся переменная окружения `DATABASE_URL` на отдельный файл `test_recipe_book.db` в корне проекта (чтобы не затирать локальную `recipe_book.db`). Перед каждым тестом схема пересоздаётся на этом движке.
+
+В тестах задокументированы техники **эквивалентного разбиения** и **анализа граничных значений** (docstring классов и кейсов), используются **параметризация** и **setup/teardown** через фикстуры `pytest`.
+
+Запуск только API-тестов:
+
+```bash
+pytest -q tests/test_api_products.py tests/test_api_dishes.py tests/test_api_integration.py
+```
+
 ## Unit-тесты расчёта КБЖУ (по ТЗ)
 
 Unit-тесты для автоматического расчёта калорийности блюда находятся в `tests/test_unit_dish_macros.py`.
